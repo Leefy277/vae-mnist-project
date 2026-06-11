@@ -15,15 +15,15 @@
 
 ##  项目结构
 
-项目包含两种实现方式：单文件基础版和模块化进阶版。
+项目包含两种实现方式：单文件基础版和模块化进阶版。两个版本均已集成 Loss 曲线绘制功能。
 
-- `vae/main.py`：单文件基础版。包含了完整的 VAE 定义 (隐变量维度为20)、训练逻辑以及生成和重建测试，适合快速运行和理解 VAE 整体流程。
-- `vae_mnist/`：模块化进阶版，将模型、训练和可视化解耦，专注于 2D/3D 隐空间的探索。
+- `vae/main.py`：单文件基础版。包含了完整的 VAE 架构定义 (隐变量维度为20)、训练逻辑、生成/重建测试，并在程序结束时自动导出 20 个 Epoch 的训练损失曲线。
+- `vae_mnist/`：模块化进阶版。将模型、训练和可视化解耦，专注于 2D/3D 隐空间的探索。
   - `model.py`：定义了 VAE 的核心网络架构，包含 Encoder、重参数化技巧 (Reparameterization) 和 Decoder。
-  - `train.py`：负责加载数据、计算损失 (BCE + KLD) 并执行训练循环，最终保存模型权重 `vae_mnist.pth`。
+  - `train.py`：负责加载数据、计算损失 (BCE + KLD) 并执行训练循环，结束后自动保存权重文件并导出 2D 降维训练的 Loss 曲线。
   - `visualize.py`：加载训练好的模型，在 2D 隐空间内均匀采样，生成具有连续渐变效果的 2D 数字流形图。
-  - `visualize_3d_digits.py`：加载 3D VAE 权重，使用 `matplotlib` 渲染大尺寸、高清晰度的 3D 数字隐空间散点图。
-
+  - `visualize_3d_digits.py`：加载 3D VAE 权重，使用 `matplotlib` 渲染高清晰度的 3D 数字隐空间散点图，并同步展现 3D 训练的 Loss 收敛轨迹。
+  
 ## 运行
 
 ### 方法一：运行单文件基础版
@@ -32,7 +32,15 @@
 cd vae
 python main.py
 ```
+运行产出：
 
+vae_mnist.pth：模型权重文件。
+
+generated_digits.png：随机生成的数字大图。
+
+reconstruction.png：原图与模型重建图的对比。
+
+vae_loss_curve.png：基础版 VAE 的整个训练收敛曲线图。
 ### 方法二：运行模块化进阶版
 进入 vae_mnist 文件夹，按照以下顺序执行：
 
@@ -41,7 +49,7 @@ python main.py
 cd vae_mnist
 python train.py
 ```
-训练过程中的生成样本会保存在 results/ 目录下，训练完成后保存权重文件。
+训练过程中的生成样本会保存在 results/ 目录下，训练完成后保存权重文件，并且会在 results/ 中自动生成 training_loss_curve.png。
 
 2. 2D隐空间流形可视化
  ```bash
