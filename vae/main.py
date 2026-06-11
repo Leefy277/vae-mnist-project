@@ -8,6 +8,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
 from torch.utils.data import DataLoader
+import matplotlib.pyplot as plt
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -117,6 +118,9 @@ optimizer = optim.Adam(
     lr=0.001
 )
 
+# 创建一个列表用来记录每个 Epoch 的 Loss
+loss_history = []
+
 
 # =====================
 # 7. 训练函数
@@ -157,6 +161,9 @@ def train(epoch):
     avg_loss = total_loss / len(train_loader.dataset)
     print(f"Epoch {epoch} 平均损失: {avg_loss:.4f}")
 
+    # 保存当前的平均损失
+    loss_history.append(avg_loss)
+
 
 # =====================
 # 8. 开始训练
@@ -189,7 +196,7 @@ with torch.no_grad():
 
     sample = model.decode(z)
 
-    sample = sample.view(64,1,28,28)
+    sample = sample.view(64, 1, 28, 28)
 
     save_image(
         sample,
@@ -210,7 +217,7 @@ with torch.no_grad():
 
     recon, _, _ = model(data)
 
-    recon = recon.view(8,1,28, 28)
+    recon = recon.view(8, 1, 28, 28)
 
     save_image(
         recon,
@@ -221,7 +228,21 @@ with torch.no_grad():
 print("重建图片已保存：reconstruction.png")
 
 # =====================
-# 12. 程序结束
+# 12. 新增：绘制并展示训练损失曲线
+# =====================
+plt.figure(figsize=(10, 5))
+plt.plot(range(1, epochs + 1), loss_history, label='Total Loss (BCE + KLD)', color='blue', linewidth=2, marker='s')
+plt.title('Base VAE Training Loss Curve (20 Dimensions)')
+plt.xlabel('Epochs')
+plt.ylabel('Average Loss')
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.legend()
+plt.savefig('vae_loss_curve.png', bbox_inches='tight', dpi=300)
+print("训练曲线图已保存至: vae_loss_curve.png")
+plt.show()
+
+# =====================
+# 13. 程序结束
 # =====================
 
 print("VAE训练完成")

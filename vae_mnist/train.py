@@ -5,6 +5,7 @@ from torchvision import datasets, transforms
 from torchvision.utils import save_image
 from model import VAE
 import os
+import matplotlib.pyplot as plt
 
 # 创建结果保存目录
 os.makedirs('results', exist_ok=True)
@@ -24,18 +25,14 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 model = VAE(input_dim=784, hidden_dim=400, latent_dim=2).to(DEVICE)
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
+# 2. 创建一个列表，用来存储每个 Epoch 的平均损失
+loss_history = []
+
 
 def loss_function(recon_x, x, mu, logvar):
-    """
-    VAE 损失函数 = 重构损失 (BCE) + KL散度 (KLD)
-    """
-    # 1. 重构损失：衡量生成的图片与原图在像素级别上的差距
+    """ VAE 损失函数 = 重构损失 (BCE) + KL散度 (KLD) """
     BCE = torch.nn.functional.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
-
-    # 2. KL散度：衡量隐空间预测分布与标准正态分布 N(0, I) 的距离（起到正则化作用）
-    # 由数学公式推导化简而来
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-
     return BCE + KLD
 
 
@@ -57,7 +54,11 @@ def train(epoch):
         train_loss += loss.item()
         optimizer.step()
 
-    print(f"Epoch [{epoch}/{EPOCHS}] Average Loss: {train_loss / len(train_loader.dataset):.4f}")
+    avg_loss = train_loss / len(train_loader.dataset)
+    print(f"Epoch [{epoch}/{EPOCHS}] Average Loss: {avg_loss:.4f}")
+
+    # 3. 将当前 Epoch 的平均损失记录下来
+    loss_history.append(avg_loss)
 
 
 if __name__ == "__main__":
@@ -65,12 +66,28 @@ if __name__ == "__main__":
     for epoch in range(1, EPOCHS + 1):
         train(epoch)
 
-        # 每个 Epoch 结束后，在 2D 隐空间随机采样 64 个点，测试生成效果
+        # 每个 Epoch 结束后测试生成效果
         with torch.no_grad():
             sample = torch.randn(64, 2).to(DEVICE)
             sample = model.decode(sample).cpu()
             save_image(sample.view(64, 1, 28, 28), f'results/sample_{epoch}.png')
 
-    # 保存权重用于后续可视化
+    # 保存权重
     torch.save(model.state_dict(), 'vae_mnist.pth')
     print("模型训练完成，权重已保存为 vae_mnist.pth")
+
+    # 4. 训练完成后，自动绘制并保存训练损失曲线
+    plt.figure(figsize=(10, 5))
+    plt.plot(range(1, EPOCHS + 1), loss_history, label='Total Loss (BCE + KLD)', color='purple', linewidth=2,
+             marker='o')
+    plt.title('VAE Training Loss Curve')
+    plt.xlabel('Epochs')
+    plt.ylabel('Average Loss')
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.legend()
+
+    # 保存曲线图到 results 目录
+    loss_curve_path = 'results/training_loss_curve.png'
+    plt.savefig(loss_curve_path, bbox_inches='tight', dpi=300)
+    print(f"成功生成训练曲线图并保存至: {loss_curve_path}")
+    plt.show()
