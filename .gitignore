@@ -1,0 +1,18 @@
+# 忽略 Python 缓存和 IDE 配置文件
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+
+# 忽略数据集文件夹
+data/
+vae_mnist/data/
+vae/data/
+
+# 忽略模型权重文件
+*.pth
+*.pt
+
+# 忽略临时运行结果（可选，如果你想保留生成的图片可以删掉这两行）
+results/
+*.png
